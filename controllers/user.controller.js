@@ -60,8 +60,8 @@ const loginUser = async (req, res) => {
     const token = generateToken(payload);
     res.cookie('token', token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+        secure: true,        // ← Required: cookie only sent over HTTPS
+  sameSite: 'none', 
       maxAge: 365 * 24 * 60 * 60 * 1000 // 1 year
     });
    
