@@ -1,8 +1,8 @@
+import { initDB } from './db/db.js';
 import dotenv from 'dotenv';
 import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
-import { initDB } from './db/db.js';
 import userRoutes from './routes/user.routes.js';
 import productRoutes from './routes/product.routes.js';
 
@@ -11,11 +11,11 @@ dotenv.config();
 
 app.use(cors({
   origin: process.env.FRONTEND_URL,
-  methods: ["GET", "POST", "PUT", "DELETE"],
+  methods: ["GET", "POST", "PUT", "DELETE","OPTIONS"],
   credentials: true,
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
-
+app.options('*', cors());
 app.use(express.json());
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
