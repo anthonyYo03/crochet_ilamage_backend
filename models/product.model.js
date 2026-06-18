@@ -13,7 +13,7 @@ const Product = sequelize.define('Product', {
     allowNull: false
   },
   category: {
-    type: DataTypes.ENUM('Table Runners', 'Bags', 'Baby Shower Collection', 'Kitchen Collection'),
+    type: DataTypes.ENUM('Table Runners', 'Bags', 'Baby Shower Collection', 'Keychain Collection', 'Christmas Collection'),
     allowNull: false
   },
   description: {
