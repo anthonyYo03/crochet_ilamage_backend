@@ -1,6 +1,6 @@
 import Product from "../models/product.model.js";
 import ProductImage from "../models/productImage.model.js";
-
+import { Op } from "sequelize";
 export const createProduct = async (req, res) => {
     try {
         // ── SWAPPED 'size' WITH 'height' AND 'width' ──
@@ -69,11 +69,20 @@ export const getOneProduct = async (req, res) => {
 
 export const getAllProducts = async (req, res) => {
     try {
-        const { category, is_active, page = 1, limit = 20 } = req.query;
+        // <-- ADDED 'search' TO DESTRUCTURED QUERY
+        const { category, is_active, page = 1, limit = 20, search } = req.query;
         const where = {};
 
         if (category) where.category = category;
         if (is_active !== undefined) where.is_active = is_active === "true";
+
+        // <-- ADDED SEARCH LOGIC
+        if (search) {
+            where[Op.or] = [
+                { name: { [Op.iLike]: `%${search}%` } },
+                { description: { [Op.iLike]: `%${search}%` } }
+            ];
+        }
 
         const offset = (Number(page) - 1) * Number(limit);
 
@@ -83,7 +92,7 @@ export const getAllProducts = async (req, res) => {
             offset,
             order: [["createdAt", "DESC"]],
             include: [{ model: ProductImage, as: 'images', attributes: ['image_id', 'image_url', 'position'] }],
-            distinct: true // required for correct 'count' when joining a hasMany relation
+            distinct: true
         });
 
         res.status(200).json({
