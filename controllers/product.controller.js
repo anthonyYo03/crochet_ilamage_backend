@@ -111,20 +111,12 @@ export const editProduct = async (req, res) => {
             return res.status(404).json({ error: "Product not found" });
         }
 
-        // only update fields that were actually sent
-        // ── FALLBACK CHECKS CONVERTED TO COALESCE 'height' AND 'width' ──
-        await product.update({
-            name: name ?? product.name,
-            category: category ?? product.category,
-            description: description ?? product.description,
-            price: price ?? product.price,
-            height: height ?? product.height,
-            width: width ?? product.width,
-            image_url: image_url ?? product.image_url,
-            is_active: is_active ?? product.is_active
-        });
-
         // ── IF 'images' ARRAY IS SENT, REPLACE THE FULL IMAGE SET ──
+        // ── AND KEEP THE LEGACY 'image_url' COLUMN IN SYNC WITH THE NEW FIRST IMAGE ──
+        // (this is the fix: previously image_url only updated if sent explicitly,
+        // so it kept pointing at a deleted image after an images-only edit)
+        let newImageUrl = image_url ?? product.image_url;
+
         if (Array.isArray(images)) {
             await ProductImage.destroy({ where: { product_id: id } });
 
@@ -135,8 +127,24 @@ export const editProduct = async (req, res) => {
                     position: index
                 }));
                 await ProductImage.bulkCreate(imageRecords);
+                newImageUrl = image_url ?? images[0];
+            } else {
+                newImageUrl = image_url ?? null;
             }
         }
+
+        // only update fields that were actually sent
+        // ── FALLBACK CHECKS CONVERTED TO COALESCE 'height' AND 'width' ──
+        await product.update({
+            name: name ?? product.name,
+            category: category ?? product.category,
+            description: description ?? product.description,
+            price: price ?? product.price,
+            height: height ?? product.height,
+            width: width ?? product.width,
+            image_url: newImageUrl,
+            is_active: is_active ?? product.is_active
+        });
 
         const updatedProduct = await Product.findByPk(id, {
             include: [{ model: ProductImage, as: 'images', attributes: ['image_id', 'image_url', 'position'] }]
