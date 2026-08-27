@@ -16,6 +16,8 @@ const sequelize = new Sequelize(process.env.DATABASE_URL, {
 export async function initDB() {
   await import('../models/user.model.js');
   await import('../models/product.model.js');
+  await import('../models/order.model.js');
+  await import('../models/orderItem.model.js');
  
 
   await sequelize.authenticate();

@@ -39,6 +39,22 @@ const Product = sequelize.define('Product', {
         type: DataTypes.STRING,
         allowNull: true // kept for backward compatibility, no longer required now that ProductImage handles multiple images
     },
+    quantity: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 1,
+        comment: 'Available stock level'
+    },
+    discount_price: {
+        type: DataTypes.DECIMAL(10, 2),
+        allowNull: true,
+        comment: 'Discounted price, must be lower than price if set'
+    },
+    mik_product_id: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        comment: 'MIK Online internal product ID, set after successful sync'
+    },
     is_active: {
         type: DataTypes.BOOLEAN,
         defaultValue: true

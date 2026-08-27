@@ -1,10 +1,11 @@
 import Product from "../models/product.model.js";
 import ProductImage from "../models/productImage.model.js";
 import { Op } from "sequelize";
+import { pushProduct, updateProduct, deactivateProduct } from "../services/mikClient.services.js";
 export const createProduct = async (req, res) => {
     try {
         // ── SWAPPED 'size' WITH 'height' AND 'width' ──
-        const { name, category, description, price, height, width, image_url, images } = req.body;
+        const { name, category, description, price, height, width, image_url, images,quantity, discount_price } = req.body;
         const user_id = req.user_id;
 
         // ── UPDATED VALIDATION CHECK FOR HEIGHT AND WIDTH ──
@@ -22,6 +23,8 @@ export const createProduct = async (req, res) => {
             price,
             height,
             width,
+            quantity: quantity ?? 1,
+            discount_price: discount_price ?? null,
             image_url: image_url ?? (Array.isArray(images) ? images[0] : undefined),
             user_id
         });
@@ -41,6 +44,11 @@ export const createProduct = async (req, res) => {
         });
 
         res.status(201).json(productWithImages);
+
+        // ── AUTO-SYNC TO MIK ONLINE (non-blocking) ──
+        pushProduct(productWithImages).catch(err => {
+            console.error('MIK sync (create) failed:', err.message);
+        });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: "Something went wrong creating the product" });
@@ -112,7 +120,7 @@ export const editProduct = async (req, res) => {
     try {
         const { id } = req.params;
         // ── SWAPPED 'size' WITH 'height' AND 'width' ──
-        const { name, category, description, price, height, width, image_url, images, is_active } = req.body;
+        const { name, category, description, price, height, width, image_url, images, is_active, quantity, discount_price } = req.body;
 
         const product = await Product.findByPk(id);
 
@@ -152,6 +160,8 @@ export const editProduct = async (req, res) => {
             height: height ?? product.height,
             width: width ?? product.width,
             image_url: newImageUrl,
+            quantity: quantity ?? product.quantity,
+    discount_price: discount_price ?? product.discount_price,
             is_active: is_active ?? product.is_active
         });
 
@@ -160,6 +170,17 @@ export const editProduct = async (req, res) => {
         });
 
         res.status(200).json(updatedProduct);
+
+        // ── AUTO-SYNC TO MIK ONLINE (non-blocking) ──
+        if (updatedProduct.is_active === false) {
+            deactivateProduct(updatedProduct.product_id).catch(err => {
+                console.error('MIK sync (deactivate) failed:', err.message);
+            });
+        } else {
+            updateProduct(updatedProduct).catch(err => {
+                console.error('MIK sync (update) failed:', err.message);
+            });
+        }
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: "Something went wrong updating the product" });
@@ -177,9 +198,15 @@ export const deleteProduct = async (req, res) => {
         }
 
         // Associated ProductImage rows are removed automatically via onDelete: 'CASCADE'
+        const productId = product.product_id;
         await product.destroy();
 
         res.status(200).json({ message: "Product deleted successfully" });
+
+        // ── AUTO-SYNC TO MIK ONLINE (non-blocking) ──
+        deactivateProduct(productId).catch(err => {
+            console.error('MIK sync (deactivate) failed:', err.message);
+        });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: "Something went wrong deleting the product" });

@@ -5,6 +5,7 @@ import cookieParser from 'cookie-parser';
 import { initDB } from './db/db.js';
 import userRoutes from './routes/user.routes.js';
 import productRoutes from './routes/product.routes.js';
+import mikRoutes from './routes/mik.routes.js';
 
 const app = express();
 dotenv.config(); 
@@ -21,6 +22,7 @@ app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
 app.use('/user', userRoutes);
 app.use('/products', productRoutes);
+app.use('/mikonline/v1', mikRoutes);
 
 try {
   console.log('Connecting to database...');
