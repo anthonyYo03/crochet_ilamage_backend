@@ -22,8 +22,8 @@ async function runTests() {
   app.use('/mikonline/v1', mikRoutes);
 
   const server = app.listen(5099);
-  const BASE_URL = 'http://127.0.0.1:5099/mikonline/v1';
-
+  // const BASE_URL = 'http://127.0.0.1:5099/mikonline/v1';
+  const BASE_URL=process.env.BASE_URL_RENDER;
   let testProduct = null;
   let testOrderId = `TEST-ORD-${Date.now()}`;
   let externalOrderId = null;
